@@ -832,61 +832,104 @@
    
    /* --- Responsive --- */
    @media (max-width: 900px) {
-       .encabezado {
-           padding: 0 20px;
-           height: 70px;
-       }
-   
-       .contenedor {
-           width: calc(100% - 32px);
-           padding: 30px 0 80px;
-       }
-   
-       .portada {
-           padding: 50px 0 40px;
-       }
-   
-       .grilla {
-           grid-template-columns: 1fr;
-           gap: 30px;
-       }
-   
-       .barra-titulo {
-           flex-direction: column;
-           align-items: flex-start;
-           gap: 16px;
-       }
-   
-       .campos-dobles {
-           grid-template-columns: 1fr;
-       }
-   
-       .formulario-estado {
-           flex-direction: column;
-           min-width: 100%;
-       }
-   
-       .formulario-estado select,
-       .formulario-estado button {
-           width: 100%;
-       }
-   
-       .stats-row {
-           grid-template-columns: repeat(2, 1fr);
-       }
-   }
-   
-   @media (max-width: 480px) {
-       .servicios {
-           grid-template-columns: 1fr;
-       }
-   
-       .stats-row {
-           grid-template-columns: 1fr;
-       }
-   
-       .navegacion a {
-           padding: 8px 12px;
-           font-size: 13px;
-       }
-   }
+        .encabezado {
+            padding: 0 20px;
+            height: 70px;
+        }
+    
+        .contenedor {
+            width: calc(100% - 32px);
+            padding: 30px 0 80px;
+        }
+    
+        .portada {
+            padding: 50px 0 40px;
+        }
+    
+        .grilla {
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+    
+        .barra-titulo {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 16px;
+        }
+    
+        .campos-dobles {
+            grid-template-columns: 1fr;
+        }
+    
+        .formulario-estado {
+            flex-direction: column;
+            min-width: 100%;
+        }
+    
+        .formulario-estado select,
+        .formulario-estado button {
+            width: 100%;
+        }
+    
+        .stats-row {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 600px) {
+        .encabezado {
+            flex-direction: column;
+            justify-content: center;
+            height: auto;
+            padding: 15px 20px;
+            gap: 10px;
+        }
+
+        .portada h1 {
+            font-size: 36px;
+        }
+
+        .portada p {
+            font-size: 16px;
+        }
+
+        .panel {
+            padding: 20px;
+        }
+
+        td, th {
+            padding: 12px;
+            font-size: 14px;
+        }
+
+        button,
+        .boton-secundario,
+        .boton-primario {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .servicios {
+            grid-template-columns: 1fr;
+        }
+    
+        .stats-row {
+            grid-template-columns: 1fr;
+        }
+    
+        .navegacion {
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .navegacion a {
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+
+        .barra-titulo h1 {
+            font-size: 28px;
+        }
+    }
