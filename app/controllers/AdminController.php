@@ -3,6 +3,10 @@
 require_once __DIR__ . '/../core/Controller.php';
 require_once __DIR__ . '/../models/Admin.php';
 require_once __DIR__ . '/../models/Turno.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
 
 class AdminController extends Controller
 {
@@ -178,35 +182,54 @@ class AdminController extends Controller
         $servicio     = $turno['servicio_nombre'];
         $fechaHora    = date('d/m/Y H:i', strtotime($turno['fecha_hora']));
 
-        $asunto = "Actualización de tu turno en " . $this->config['app_nombre'];
+        $mail = new PHPMailer(true);
 
-        $mensaje = "Hola $cliente,\n\n";
-        $mensaje .= "Te escribimos para informarte que el estado de tu turno para '$servicio' el día $fechaHora ha sido actualizado.\n\n";
-        
-        switch ($nuevoEstado) {
-            case 'confirmado':
-                $mensaje .= "¡Excelente noticia! Tu turno ha sido CONFIRMADO. Te esperamos.\n";
-                break;
-            case 'cancelado':
-                $mensaje .= "Lamentablemente, el turno ha sido CANCELADO. Por favor, volvé a agendar o comunícate con nosotros.\n";
-                break;
-            case 'completado':
-                $mensaje .= "Tu turno ha sido marcado como COMPLETADO. ¡Gracias por elegirnos!\n";
-                break;
-            default:
-                $mensaje .= "El estado de tu turno ahora es: " . ucfirst($nuevoEstado) . ".\n";
-                break;
+        try {
+            // Configuración del servidor SMTP
+            $mail->isSMTP();
+            $mail->Host       = $this->config['smtp']['host'];
+            $mail->SMTPAuth   = true;
+            $mail->Username   = $this->config['smtp']['usuario'];
+            $mail->Password   = $this->config['smtp']['clave'];
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; // O usar ENCRYPTION_STARTTLS para el puerto 587
+            $mail->Port       = $this->config['smtp']['puerto'];
+            $mail->CharSet    = 'UTF-8';
+
+            // Remitente y destinatario
+            $mail->setFrom($this->config['smtp']['usuario'], $this->config['app_nombre']);
+            $mail->addAddress($destinatario, $cliente);
+
+            // Contenido
+            $mail->isHTML(true);
+            $mail->Subject = "Actualización de tu turno en " . $this->config['app_nombre'];
+
+            $mensajeHtml = "<h2>Hola $cliente,</h2>";
+            $mensajeHtml .= "<p>Te escribimos para informarte que ha habido una actualización en tu turno para <strong>'$servicio'</strong> programado para el día <strong>$fechaHora</strong>.</p>";
+            
+            switch ($nuevoEstado) {
+                case 'confirmado':
+                    $mensajeHtml .= "<p style='color: #1f7a4d;'><strong>¡Excelente noticia! Tu turno ha sido CONFIRMADO. Te esperamos.</strong></p>";
+                    break;
+                case 'cancelado':
+                    $mensajeHtml .= "<p style='color: #b43a3a;'><strong>Lamentablemente, el turno ha sido CANCELADO.</strong></p><p>Por favor, volvé a agendar o comunícate con nosotros para más detalles.</p>";
+                    break;
+                case 'completado':
+                    $mensajeHtml .= "<p style='color: #60a5fa;'><strong>Tu turno ha sido marcado como COMPLETADO.</strong></p><p>¡Gracias por elegirnos!</p>";
+                    break;
+                default:
+                    $mensajeHtml .= "<p>El estado de tu turno ahora es: <strong>" . ucfirst($nuevoEstado) . "</strong>.</p>";
+                    break;
+            }
+
+            $mensajeHtml .= "<br><p>Saludos cordiales,<br>El equipo de <strong>" . $this->config['app_nombre'] . "</strong></p>";
+
+            $mail->Body    = $mensajeHtml;
+            $mail->AltBody = strip_tags(str_replace(['<br>', '</p>'], ["\n", "\n\n"], $mensajeHtml));
+
+            $mail->send();
+        } catch (Exception $e) {
+            // Log de error opcional aquí: 
+            // error_log("Error al enviar correo: {$mail->ErrorInfo}");
         }
-
-        $mensaje .= "\nSaludos cordiales,\nEl equipo de " . $this->config['app_nombre'];
-
-        $cabeceras = "From: noreply@nailgestor.local\r\n";
-        $cabeceras .= "Reply-To: contacto@nailgestor.local\r\n";
-        $cabeceras .= "Content-Type: text/plain; charset=UTF-8\r\n";
-        $cabeceras .= "X-Mailer: PHP/" . phpversion();
-
-        // Desactivamos temporalmente el warning para evitar que falle visiblemente 
-        // si no hay un servidor SMTP (sendmail) configurado en localhost.
-        @mail($destinatario, $asunto, $mensaje, $cabeceras);
     }
 }
