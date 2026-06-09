@@ -4,6 +4,10 @@ require_once __DIR__ . '/../core/Controller.php';
 require_once __DIR__ . '/../models/Servicio.php';
 require_once __DIR__ . '/../models/Cliente.php';
 require_once __DIR__ . '/../models/Turno.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
 
 class PublicController extends Controller
 {
@@ -59,7 +63,46 @@ class PublicController extends Controller
         $clienteId = $clienteModelo->crear($nombre, $telefono, $email);
         $turnoModelo->crear($clienteId, $servicioId, $fechaHora);
 
+        if (!empty($email)) {
+            $this->enviarConfirmacionReserva($email, $nombre, $servicio['nombre'], $fechaHora);
+        }
+
         $this->redirigir('?mensaje=Tu turno fue registrado y quedó en espera hasta que lo aprobemos.');
+    }
+
+    private function enviarConfirmacionReserva(string $destinatario, string $cliente, string $servicio, string $fechaHora): void
+    {
+        $fechaFormateada = date('d/m/Y H:i', strtotime($fechaHora));
+        $mail = new PHPMailer(true);
+
+        try {
+            $mail->isSMTP();
+            $mail->Host       = $this->config['smtp']['host'];
+            $mail->SMTPAuth   = true;
+            $mail->Username   = $this->config['smtp']['usuario'];
+            $mail->Password   = $this->config['smtp']['clave'];
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+            $mail->Port       = $this->config['smtp']['puerto'];
+            $mail->CharSet    = 'UTF-8';
+
+            $mail->setFrom($this->config['smtp']['usuario'], $this->config['app_nombre']);
+            $mail->addAddress($destinatario, $cliente);
+
+            $mail->isHTML(true);
+            $mail->Subject = "Solicitud de turno recibida - " . $this->config['app_nombre'];
+
+            $mensajeHtml = "<h2>Hola $cliente,</h2>";
+            $mensajeHtml .= "<p>Hemos recibido tu solicitud de turno para <strong>'$servicio'</strong> el día <strong>$fechaFormateada</strong>.</p>";
+            $mensajeHtml .= "<p>Tu turno se encuentra <strong>PENDIENTE</strong> de confirmación por nuestro equipo. Te avisaremos cuando sea confirmado o si hay algún cambio.</p>";
+            $mensajeHtml .= "<br><p>Saludos cordiales,<br>El equipo de <strong>" . $this->config['app_nombre'] . "</strong></p>";
+
+            $mail->Body    = $mensajeHtml;
+            $mail->AltBody = strip_tags(str_replace(['<br>', '</p>'], ["\n", "\n\n"], $mensajeHtml));
+
+            $mail->send();
+        } catch (Exception $e) {
+            // Error silently ignored to not interrupt booking process
+        }
     }
 
     public function apiHorarios(): void
@@ -86,7 +129,6 @@ class PublicController extends Controller
         $turnoModelo = new Turno();
         $ocupados = $turnoModelo->obtenerOcupadosPorFecha($fecha);
         
-        // Horarios comerciales (9:00 a 19:00)
         $horaInicio = 9;
         $horaFin = 19;
         $disponibles = [];
@@ -119,7 +161,6 @@ class PublicController extends Controller
                     $disponibles[] = $horaActual->format('H:i');
                 }
                 
-                // Intervalos de la grilla de turnos
                 $horaActual->modify('+30 minutes');
             }
         } catch (\Exception $e) {
