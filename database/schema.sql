@@ -50,19 +50,55 @@ CREATE TABLE IF NOT EXISTS admins (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
+-- -------------------------------------------------------------------
+-- Tabla: horarios_disponibles
+-- Permite al admin definir rangos de horarios por dia de la semana
+-- dia_semana: 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
+-- -------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS horarios_disponibles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    dia_semana TINYINT NOT NULL,
+    hora_inicio TIME NOT NULL,
+    hora_fin TIME NOT NULL,
+    activo TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_dia (dia_semana)
+) ENGINE=InnoDB;
+
+-- -------------------------------------------------------------------
+-- Tabla: trabajos (Galería)
+-- -------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS trabajos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    imagen VARCHAR(255) NOT NULL,
+    titulo VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
 -- Administrador por defecto: usuario=admin / clave=admin123
 -- Hash generado con password_hash('admin123', PASSWORD_BCRYPT)
 INSERT IGNORE INTO admins (usuario, clave) VALUES
-('admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi');
+('admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'),
+('Maxi', '$2y$10$87JZPy/naO75U3f4kzwfeu0D0veioTeiCGsDPB8E10FPrDPEQWKQ2');
 
 -- -------------------------------------------------------------------
 -- Datos iniciales: servicios
 -- -------------------------------------------------------------------
 INSERT INTO servicios (nombre, precio, duracion_minutos, descripcion) VALUES
-('Manicura Clásica', 6500.00, 45, 'Limpieza, limado y esmaltado tradicional con acabado impecable.'),
-('Semipermanente', 9500.00, 60, 'Esmaltado semipermanente con acabado brillante de larga duración.'),
-('Kapping Gel', 12500.00, 75, 'Refuerzo de uña natural con gel nivelador para mayor resistencia.'),
-('Soft Gel', 16000.00, 90, 'Extensiones livianas con tips soft gel, aspecto natural y elegante.'),
-('Nail Art', 8000.00, 60, 'Diseños personalizados con técnicas artísticas sobre cualquier base.'),
-('Spa de Manos', 5000.00, 40, 'Exfoliación, hidratación profunda y masaje relajante de manos.')
-ON DUPLICATE KEY UPDATE nombre = VALUES(nombre);
+('Semipermanentes', 6500.00, 60, 'Esmaltado semipermanente con acabado brillante de larga duración.'),
+('Capping gel', 7500.00, 75, 'Refuerzo de uña natural con gel nivelador para mayor resistencia.'),
+('Softgel', 8500.00, 90, 'Extensiones livianas con tips soft gel para un aspecto natural.')
+
+ON DUPLICATE KEY UPDATE precio = VALUES(precio), duracion_minutos = VALUES(duracion_minutos);
+
+-- -------------------------------------------------------------------
+-- Datos iniciales: horarios (Lunes a Viernes 9-19, Sábado 9-14)
+-- -------------------------------------------------------------------
+INSERT IGNORE INTO horarios_disponibles (dia_semana, hora_inicio, hora_fin, activo) VALUES
+(0, '00:00', '00:00', 0),
+(1, '09:00', '19:00', 1),
+(2, '09:00', '19:00', 1),
+(3, '09:00', '19:00', 1),
+(4, '09:00', '19:00', 1),
+(5, '09:00', '19:00', 1),
+(6, '09:00', '14:00', 1);

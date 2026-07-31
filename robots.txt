@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Allow: /?accion=reservar_form
+Disallow: /?controlador=admin
+Disallow: /app/
+Disallow: /vendor/
+Disallow: /database/
+
+Sitemap: https://brisanails.freehosting.dev/sitemap.xml

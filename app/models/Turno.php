@@ -11,16 +11,17 @@ class Turno
         $this->db = Database::conectar();
     }
 
-    public function crear(int $clienteId, int $servicioId, string $fechaHora): bool
+    public function crear(int $clienteId, int $servicioId, string $fechaHora, ?string $fechaHoraFin = null): bool
     {
         $consulta = $this->db->prepare(
-            'INSERT INTO turnos (cliente_id, servicio_id, fecha_hora) VALUES (:cliente_id, :servicio_id, :fecha_hora)'
+            'INSERT INTO turnos (cliente_id, servicio_id, fecha_hora, fecha_hora_fin) VALUES (:cliente_id, :servicio_id, :fecha_hora, :fecha_hora_fin)'
         );
 
         return $consulta->execute([
             'cliente_id' => $clienteId,
             'servicio_id' => $servicioId,
             'fecha_hora' => $fechaHora,
+            'fecha_hora_fin' => $fechaHoraFin,
         ]);
     }
 
@@ -39,7 +40,7 @@ class Turno
 
     public function cambiarEstado(int $id, string $estado): bool
     {
-        $estadosPermitidos = ['pendiente', 'confirmado', 'cancelado', 'completado'];
+        $estadosPermitidos = ['pendiente', 'confirmado', 'cancelado'];
 
         if (!in_array($estado, $estadosPermitidos, true)) {
             return false;
@@ -53,10 +54,20 @@ class Turno
         ]);
     }
 
+    public function actualizarHorarios(int $id, string $fechaHoraInicio, string $fechaHoraFin): bool
+    {
+        $consulta = $this->db->prepare('UPDATE turnos SET fecha_hora = :inicio, fecha_hora_fin = :fin WHERE id = :id');
+        return $consulta->execute([
+            'inicio' => $fechaHoraInicio,
+            'fin' => $fechaHoraFin,
+            'id' => $id,
+        ]);
+    }
+
     public function obtenerOcupadosPorFecha(string $fecha): array
     {
         $consulta = $this->db->prepare("
-            SELECT turnos.fecha_hora, servicios.duracion_minutos
+            SELECT turnos.fecha_hora, turnos.fecha_hora_fin, servicios.duracion_minutos
             FROM turnos
             INNER JOIN servicios ON servicios.id = turnos.servicio_id
             WHERE DATE(turnos.fecha_hora) = :fecha
@@ -68,7 +79,7 @@ class Turno
 
     public function buscarConDetalles(int $id): ?array
     {
-        $sql = "SELECT turnos.*, clientes.nombre AS cliente_nombre, clientes.email,
+        $sql = "SELECT turnos.*, clientes.nombre AS cliente_nombre, clientes.email, clientes.telefono,
                        servicios.nombre AS servicio_nombre
                 FROM turnos
                 INNER JOIN clientes ON clientes.id = turnos.cliente_id
@@ -81,5 +92,10 @@ class Turno
         
         $resultado = $consulta->fetch();
         return $resultado ?: null;
+    }
+    public function eliminar(int $id): bool
+    {
+        $consulta = $this->db->prepare('DELETE FROM turnos WHERE id = :id');
+        return $consulta->execute(['id' => $id]);
     }
 }
